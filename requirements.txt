@@ -1,5 +1,6 @@
 flask
 rembg
 pillow
+flask-cors
 gunicorn
 onnxruntime
