@@ -1,9 +1,9 @@
+import os
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from rembg import remove
 from PIL import Image
 import io
-import os
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend access
@@ -46,5 +46,6 @@ def remove_background():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))  # Bind to Render's assigned port
+    port = int(os.environ.get("PORT", 5000))  # Use Render's assigned port
+    print(f"Running on port {port}...")  # Debugging
     app.run(host='0.0.0.0', port=port)
