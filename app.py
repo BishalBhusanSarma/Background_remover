@@ -1,15 +1,12 @@
-import os
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from rembg import remove
 from PIL import Image
 import io
+import os
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend access
-
-os.makedirs('uploads', exist_ok=True)
-os.makedirs('processed', exist_ok=True)
+CORS(app)
 
 @app.route('/')
 def home():
@@ -37,15 +34,16 @@ def remove_background():
         new_bg = Image.new("RGBA", (width, height), bg_color)
         new_bg.paste(output_img, (0, 0), mask=output_img)
         
-        output_path = os.path.join('processed', 'output.png')
-        new_bg.save(output_path)
-        
-        return send_file(output_path, mimetype='image/png', as_attachment=True, download_name='processed_image.png')
-    
+        # Serve image directly without saving it
+        img_io = io.BytesIO()
+        new_bg.save(img_io, format="PNG")
+        img_io.seek(0)
+
+        return send_file(img_io, mimetype='image/png', as_attachment=True, download_name='processed_image.png')
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # Use Render's assigned port
-    print(f"Running on port {port}...")  # Debugging
+    port = int(os.environ.get("PORT", 5000))  # Render assigns a dynamic port
     app.run(host='0.0.0.0', port=port)
