@@ -6,7 +6,10 @@ import io
 import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # Enable CORS globally
+
+os.makedirs('uploads', exist_ok=True)
+os.makedirs('processed', exist_ok=True)
 
 @app.route('/')
 def home():
@@ -34,16 +37,16 @@ def remove_background():
         new_bg = Image.new("RGBA", (width, height), bg_color)
         new_bg.paste(output_img, (0, 0), mask=output_img)
         
-        # Serve image directly without saving it
-        img_io = io.BytesIO()
-        new_bg.save(img_io, format="PNG")
-        img_io.seek(0)
+        output_path = os.path.join('processed', 'output.png')
+        new_bg.save(output_path)
 
-        return send_file(img_io, mimetype='image/png', as_attachment=True, download_name='processed_image.png')
-
+        response = send_file(output_path, mimetype='image/png', as_attachment=True, download_name='processed_image.png')
+        response.headers['Access-Control-Allow-Origin'] = '*'  # Allow all origins
+        return response
+    
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # Use Render's assigned port
+    port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
