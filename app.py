@@ -9,7 +9,7 @@ app = FastAPI()
 
 os.makedirs("processed", exist_ok=True)  # Ensure directory exists
 
-@app.get("/")
+@app.get("/remove-bg")
 async def root():
     return {"message": "FastAPI is running!"}
 
