@@ -1,5 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import JSONResponse, FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 from rembg import remove
 from PIL import Image
 import io
@@ -7,6 +8,14 @@ import os
 import re
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Change this if Live Server runs on a different port
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 os.makedirs("processed", exist_ok=True)  # Ensure folder exists
 
