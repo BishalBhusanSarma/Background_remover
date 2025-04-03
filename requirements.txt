@@ -1,9 +1,7 @@
-flask
+fastapi
+uvicorn
 rembg
 pillow
-flask-cors
-gunicorn
+python-multipart
+fastapi-cors
 onnxruntime
-requests
-numpy
-scipy
