@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Remover</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        input, button { margin: 10px; padding: 10px; }
+        #loading { display: none; font-size: 16px; color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Upload Image & Select Background Color</h2>
+    
+    <input type="file" id="imageInput" accept="image/*" required>
+    <input type="color" id="colorPicker" value="#ffffff">
+    <button onclick="processImage()">Remove Background</button>
+    
+    <div id="loading">Processing...</div>
+
+    <script>
+        async function processImage() {
+            const fileInput = document.getElementById('imageInput');
+            const colorPicker = document.getElementById('colorPicker');
+            const loading = document.getElementById('loading');
+    
+            if (!fileInput.files.length) {
+                alert('Please select an image.');
+                return;
+            }
+    
+            // Resize image before upload
+            let resizedFile = await resizeImage(fileInput.files[0], 1024, 1024); // Resize to max 1024x1024
+    
+            let formData = new FormData();
+            formData.append("image", resizedFile);
+            formData.append("hex_color", colorPicker.value);
+    
+            try {
+                loading.style.display = "block"; // Show loading text
+    
+                let response = await fetch("http://127.0.0.1:8000/remove-bg", { 
+                    method: "POST",
+                    body: formData
+                });
+    
+                if (!response.ok) throw new Error("Failed to process image");
+    
+                let blob = await response.blob();
+                let downloadLink = document.createElement("a");
+                downloadLink.href = URL.createObjectURL(blob);
+                downloadLink.download = "processed_image.png";
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+    
+            } catch (error) {
+                alert("Error processing image: " + error.message);
+            } finally {
+                loading.style.display = "none"; // Hide loading text
+            }
+        }
+    
+        // Resize image function
+        function resizeImage(file, maxWidth, maxHeight) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement("canvas");
+                        let width = img.width;
+                        let height = img.height;
+    
+                        if (width > maxWidth || height > maxHeight) {
+                            if (width > height) {
+                                height *= maxWidth / width;
+                                width = maxWidth;
+                            } else {
+                                width *= maxHeight / height;
+                                height = maxHeight;
+                            }
+                        }
+    
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0, width, height);
+    
+                        canvas.toBlob((blob) => {
+                            resolve(new File([blob], file.name, { type: "image/png" }));
+                        }, "image/png");
+                    };
+                };
+            });
+        }
+    </script>
+</body>
+</html> 
