@@ -5,6 +5,7 @@ from rembg import remove
 from PIL import Image
 import io
 import re
+import os
 
 app = FastAPI()
 
@@ -17,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Convert HEX to RGBA tuple
+# Helper: Convert HEX to RGBA
 def hex_to_rgba(hex_color: str):
     hex_color = hex_color.strip().lstrip("#")
     if len(hex_color) == 6:
@@ -39,7 +40,7 @@ async def remove_background(
     hex_color: str = Form(...)
 ):
     try:
-        # Validate hex color input
+        # Validate hex color
         if not re.fullmatch(r"#[0-9A-Fa-f]{6,8}", hex_color):
             return JSONResponse(
                 content={"error": "Invalid HEX format. Use #RRGGBB or #RRGGBBAA."},
@@ -48,19 +49,17 @@ async def remove_background(
 
         rgba_color = hex_to_rgba(hex_color)
 
-        # Read input image bytes
+        # Read and remove background
         input_bytes = await image.read()
         output_bytes = remove(input_bytes)
 
-        # Process the image with transparent background
+        # Compose final image with new background
         output_img = Image.open(io.BytesIO(output_bytes)).convert("RGBA")
         width, height = output_img.size
-
-        # Create background with given color
         new_bg = Image.new("RGBA", (width, height), rgba_color)
         new_bg.paste(output_img, (0, 0), mask=output_img.split()[3])
 
-        # Return as stream without saving to disk
+        # Stream image
         buffer = io.BytesIO()
         new_bg.save(buffer, format="PNG")
         buffer.seek(0)
@@ -71,3 +70,9 @@ async def remove_background(
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# Start the server if run directly (for Render)
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
